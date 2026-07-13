@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+
+.DS_Store
+
+.env
+
+TestResults/
+coverage/
+
+src/**/bin/
+src/**/obj/
+tests/**/bin/
+tests/**/obj/

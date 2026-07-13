@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dotNet101.Application\dotNet101.Application.csproj" />
+    <ProjectReference Include="..\dotNet101.Infrastructure\dotNet101.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

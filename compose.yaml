@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8010:8010"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://0.0.0.0:8010
+      JWT_SECRET: docker-dev-secret
+      JWT_EXPIRE_MINUTES: 60
