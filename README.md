@@ -1,21 +1,26 @@
 # dotNet-101
 
-A minimal **API-only** ASP.NET Core application in the *-101 family. It mirrors the shared backend pattern used across the other API-focused repos: a layered structure, a service-oriented split, Docker support, and the same core endpoint shape for auth, categories, items, and stats.
+A minimal **API-only** ASP.NET Core application in the *-101 family. It mirrors the JSON API contract of [fastAPI-101](https://github.com/iammikek/fastAPI-101) with JWT auth, layered services, rate limiting, and xUnit API tests — but **no server-rendered shop UI**.
 
 ## API-only by design
 
-Other *-101 projects like Django, Laravel, and Symfony include a `/shop` browser UI because those stacks are being taught as full-stack monoliths. `dotNet-101` starts as **JSON API only** because ASP.NET Core is often used as a backend for SPAs, mobile apps, and other services.
+Like [java-101](https://github.com/iammikek/java-101), [nest-101](https://github.com/iammikek/nest-101), and [express-101](https://github.com/iammikek/express-101), this repo has **no `/shop`**. ASP.NET Core can host Razor/MVC pages, but this port stays intentionally **JSON API only**. Pair it with [react-101](https://github.com/iammikek/react-101), [vue-101](https://github.com/iammikek/vue-101), or [flutter-101](https://github.com/iammikek/flutter-101).
 
-If you later want a Razor Pages or MVC version, that is better as a separate teaching variant than mixed into the base repo.
+**Why ASP.NET Core?** Learn the same *-101 contract with C#, minimal APIs, dependency injection, and JWT — the stack many teams use for production APIs on .NET.
 
 ## What's included
 
-- ASP.NET Core minimal API on port **8010**
+- ASP.NET Core **8** minimal API on port **8010**
 - Layered `src/` structure: `Api`, `Application`, `Domain`, `Infrastructure`
-- Swagger/OpenAPI for endpoint discovery
-- FastAPI-parity endpoints for auth, categories, items, filters, pagination, and stats
-- xUnit API test project with Docker test runner support
-- `Dockerfile`, `compose.yaml`, `.env.example`, and `Makefile`
+- JWT authentication (`sub` = email) with password hashing
+- Categories + items CRUD, pagination, filters, stats summary
+- Domain errors with `{ detail, code }` responses
+- Rate limiting on auth (10/min) and write endpoints (60/min)
+- **xUnit** API tests mirroring fastAPI-101 scenarios (plus service-layer tests)
+- Swagger/OpenAPI at `/swagger`
+- Dockerfile, compose.yaml, GitHub Actions CI, Makefile
+
+> Persistence today is an **in-memory store** (fine for learning and tests). SQLite/EF Core is the natural next step for Docker/prod parity with java-101 and nest-101.
 
 ## Quick start
 
@@ -28,12 +33,16 @@ cd dotNet-101
 cp .env.example .env
 dotnet restore
 dotnet run --project src/dotNet101.Api
+# or: make serve
 ```
 
-Open:
+Open **http://127.0.0.1:8010** — you should see:
 
-- `http://127.0.0.1:8010` - hello endpoint
-- `http://127.0.0.1:8010/swagger` - Swagger UI
+```json
+{"message":"Hello from dotNet-101"}
+```
+
+Swagger UI: **http://127.0.0.1:8010/swagger**
 
 ### Docker
 
@@ -41,89 +50,78 @@ Open:
 docker compose -f compose.yaml up --build
 ```
 
-API runs on `http://localhost:8010`.
+API on **http://localhost:8010**.
 
 ### Tests
 
 ```bash
 dotnet test
+# or: make test
 ```
 
-### Docker tests
+Docker tests:
 
 ```bash
-docker compose run --rm test
-# or: make docker-test
-```
-
-## Project structure
-
-```text
-dotNet-101/
-├── src/
-│   ├── dotNet101.Api/            # HTTP entry point, endpoints, Swagger
-│   ├── dotNet101.Application/    # Service contracts and use-case layer
-│   ├── dotNet101.Domain/         # Core entities
-│   └── dotNet101.Infrastructure/ # Cross-cutting implementations
-├── tests/
-│   └── dotNet101.Api.Tests/      # API parity tests
-├── dotNet-101.sln
-├── Directory.Build.props
-├── Dockerfile
-├── compose.yaml
-├── Makefile
-├── .env.example
-└── README.md
+make docker-test
 ```
 
 ## API endpoints
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/` | - | Hello message |
-| GET | `/health` | - | Health check |
-| POST | `/auth/register` | - | Register user |
-| POST | `/auth/login` | - | Login with `username` + `password` form fields |
+| GET | `/` | — | Hello message |
+| GET | `/health` | — | Health check (`database: connected`) |
+| POST | `/auth/register` | — | Register user |
+| POST | `/auth/login` | — | Login (form `username`/`password`) |
 | GET | `/auth/me` | JWT | Current user |
-| GET | `/categories` | - | List categories with `{ items, total, skip, limit }` |
-| GET | `/categories/{id}` | - | Get category |
-| POST | `/categories` | JWT | Create category |
-| PATCH | `/categories/{id}` | JWT | Update category |
-| DELETE | `/categories/{id}` | JWT | Delete category |
-| GET | `/items` | - | List items with filters and pagination |
-| GET | `/items/{id}` | - | Get item |
-| GET | `/items/stats/summary` | - | Summary statistics |
-| POST | `/items` | JWT | Create item |
-| PATCH | `/items/{id}` | JWT | Update item |
-| DELETE | `/items/{id}` | JWT | Delete item |
+| GET | `/categories` | — | List categories |
+| GET | `/categories/:id` | — | Show category |
+| POST/PATCH/DELETE | `/categories` | JWT | Manage categories |
+| GET | `/items` | — | List items (paginated, filterable) |
+| GET | `/items/stats/summary` | — | Item statistics |
+| GET | `/items/:id` | — | Show item |
+| POST/PATCH/DELETE | `/items` | JWT | Manage items |
 
-Implemented item filters:
+Write operations require `Authorization: Bearer <token>`.
 
-- `min_price`
-- `max_price`
-- `category_id`
-- `name_contains`
+Login uses OAuth2-style form fields (`username` = email), matching fastAPI-101.
 
-Rate limiting (FastAPI parity):
-
-- Auth endpoints: 10 requests per minute per client
-- Write endpoints: 60 requests per minute per client
+Item filters: `min_price`, `max_price`, `category_id`, `name_contains`.
 
 ## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ASPNETCORE_ENVIRONMENT` | `Development` | ASP.NET Core environment |
 | `ASPNETCORE_URLS` | `http://127.0.0.1:8010` | Bind address and port |
-| `JWT_SECRET` | `change-me-in-production` | Reserved for upcoming auth work |
-| `JWT_EXPIRE_MINUTES` | `60` | Reserved for upcoming auth work |
-| `DATABASE_CONNECTION` | `Data Source=./data/app.db` | Reserved for upcoming SQLite work |
+| `ASPNETCORE_ENVIRONMENT` | `Development` | ASP.NET Core environment |
+| `JWT_SECRET` | `change-me-in-production` | JWT signing secret |
+| `JWT_EXPIRE_MINUTES` | `60` | Token lifetime |
+| `DATABASE_CONNECTION` | `Data Source=./data/app.db` | Reserved for upcoming SQLite/EF Core |
 
-## Suggested next steps
+## Project structure
 
-1. Replace the in-memory store with EF Core + SQLite/PostgreSQL persistence.
-2. Expand the test suite further toward full FastAPI count parity.
-3. Add migrations and production persistence wiring.
+```
+dotNet-101/
+├── src/
+│   ├── dotNet101.Api/            # HTTP entry point, endpoints, Swagger
+│   ├── dotNet101.Application/    # Services + DTOs
+│   ├── dotNet101.Domain/         # Entities
+│   └── dotNet101.Infrastructure/ # Store, JWT, hashing, rate limit
+├── tests/
+│   └── dotNet101.Api.Tests/      # xUnit API + service tests
+├── Dockerfile
+├── compose.yaml
+└── Makefile
+```
+
+## Quick reference
+
+| Goal | Command |
+|------|---------|
+| Copy env | `cp .env.example .env` |
+| Run local | `make serve` → http://127.0.0.1:8010 |
+| Run tests | `make test` |
+| Docker | `docker compose -f compose.yaml up --build` |
 
 ## *-101 Family
 
@@ -131,23 +129,33 @@ Rate limiting (FastAPI parity):
 
 | Repo | Port | Type | Stack |
 |------|------|------|-------|
-| `fastAPI-101` | 8000 | API-only | FastAPI, SQLAlchemy |
-| `nest-101` | 8006 | API-only | NestJS, TypeScript |
-| `express-101` | 8007 | API-only | Express, Vitest |
-| `fortran-101` | 8008 | API-only | Fortran, fpm |
-| `java-101` | 8009 | API-only | Spring Boot, JPA, Flyway |
-| `dotNet-101` | 8010 | API-only | ASP.NET Core, xUnit |
+| [fastAPI-101](https://github.com/iammikek/fastAPI-101) | 8000 | API-only | FastAPI, SQLAlchemy |
+| [django-101](https://github.com/iammikek/django-101) | 8001 | Monolith | Django + DRF + shop |
+| [symfony-101](https://github.com/iammikek/symfony-101) | 8002 | Monolith | Symfony + shop |
+| [laravel-101](https://github.com/iammikek/laravel-101) | 8003 | Monolith | Laravel + shop |
+| [framework-x-101](https://github.com/iammikek/framework-x-101) | 8004 | Monolith | Framework X + shop |
+| [orchestr-101](https://github.com/iammikek/orchestr-101) | 8005 | Monolith | Orchestr + shop |
+| [nest-101](https://github.com/iammikek/nest-101) | 8006 | API-only | NestJS, TypeScript |
+| [express-101](https://github.com/iammikek/express-101) | 8007 | API-only | Express, Vitest |
+| [go-101](https://github.com/iammikek/go-101) | 8000* | API-only | Gin, GORM |
+| [fortran-101](https://github.com/iammikek/fortran-101) | 8008 | API-only | Fortran, fpm |
+| [java-101](https://github.com/iammikek/java-101) | 8009 | API-only | Spring Boot, JPA, Flyway |
+| [**dotNet-101**](https://github.com/iammikek/dotNet-101) | **8010** | API-only | ASP.NET Core, xUnit |
 
-### Monolith references
+\* go-101 also uses port 8000 — run one backend at a time, or change port in config.
 
-| Repo | Port | Type |
-|------|------|------|
-| `django-101` | 8001 | Monolith + shop |
-| `symfony-101` | 8002 | Monolith + shop |
-| `laravel-101` | 8003 | Monolith + shop |
+### Other clients
+
+| Repo | Platform | Stack |
+|------|----------|-------|
+| [flutter-101](https://github.com/iammikek/flutter-101) | Mobile / desktop | Flutter (iOS, macOS, Android) |
+| [react-101](https://github.com/iammikek/react-101) | Web browser | React 19, Vite, Vitest |
+| [vue-101](https://github.com/iammikek/vue-101) | Web browser | Vue 3, Vite, Pinia |
 
 ### Suggested pairing
 
-- Compare API stacks: `java-101` on `8009` vs `dotNet-101` on `8010`
-- Pair with a frontend: `react-101`, `vue-101`, or `flutter-101`
-- Use `laravel-101` as the full contract reference for future auth and CRUD parity
+- **Compare JVM vs .NET:** [java-101](https://github.com/iammikek/java-101) (8009) vs dotNet-101 (8010)
+- **Pair with a client:** [react-101](https://github.com/iammikek/react-101), [vue-101](https://github.com/iammikek/vue-101), or [flutter-101](https://github.com/iammikek/flutter-101)
+- **Reference contract:** [fastAPI-101](https://github.com/iammikek/fastAPI-101) or [laravel-101](https://github.com/iammikek/laravel-101)
+
+Catalogue: [automica.io/learning-101](https://automica.io/learning-101.html)

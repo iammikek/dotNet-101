@@ -49,7 +49,7 @@ app.UseSwaggerUI();
 
 app.MapGet("/", () => Results.Ok(new
 {
-    message = "Hello from FastAPI!"
+    message = "Hello from dotNet-101"
 }));
 
 app.MapGet("/health", (ITimeProvider timeProvider) =>

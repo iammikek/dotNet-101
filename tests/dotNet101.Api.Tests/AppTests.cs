@@ -22,7 +22,7 @@ public sealed class AppTests : ApiTestBase
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var payload = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
         Assert.NotNull(payload);
-        Assert.Equal("Hello from FastAPI!", payload["message"]);
+        Assert.Equal("Hello from dotNet-101", payload["message"]);
     }
 
     [Fact]
