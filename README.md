@@ -13,8 +13,8 @@ If you later want a Razor Pages or MVC version, that is better as a separate tea
 - ASP.NET Core minimal API on port **8010**
 - Layered `src/` structure: `Api`, `Application`, `Domain`, `Infrastructure`
 - Swagger/OpenAPI for endpoint discovery
-- Starter endpoints for `/`, `/health`, `/categories`, `/items`, and `/items/stats/summary`
-- xUnit smoke test project
+- FastAPI-parity endpoints for auth, categories, items, filters, pagination, and stats
+- xUnit API test project with Docker test runner support
 - `Dockerfile`, `compose.yaml`, `.env.example`, and `Makefile`
 
 ## Quick start
@@ -49,6 +49,13 @@ API runs on `http://localhost:8010`.
 dotnet test
 ```
 
+### Docker tests
+
+```bash
+docker compose run --rm test
+# or: make docker-test
+```
+
 ## Project structure
 
 ```text
@@ -59,7 +66,7 @@ dotNet-101/
 │   ├── dotNet101.Domain/         # Core entities
 │   └── dotNet101.Infrastructure/ # Cross-cutting implementations
 ├── tests/
-│   └── dotNet101.Api.Tests/      # API smoke tests
+│   └── dotNet101.Api.Tests/      # API parity tests
 ├── dotNet-101.sln
 ├── Directory.Build.props
 ├── Dockerfile
@@ -75,11 +82,32 @@ dotNet-101/
 |--------|------|------|-------------|
 | GET | `/` | - | Hello message |
 | GET | `/health` | - | Health check |
-| GET | `/categories` | - | List starter categories |
-| GET | `/items` | - | List starter items with `{ items, total, skip, limit }` |
+| POST | `/auth/register` | - | Register user |
+| POST | `/auth/login` | - | Login with `username` + `password` form fields |
+| GET | `/auth/me` | JWT | Current user |
+| GET | `/categories` | - | List categories with `{ items, total, skip, limit }` |
+| GET | `/categories/{id}` | - | Get category |
+| POST | `/categories` | JWT | Create category |
+| PATCH | `/categories/{id}` | JWT | Update category |
+| DELETE | `/categories/{id}` | JWT | Delete category |
+| GET | `/items` | - | List items with filters and pagination |
+| GET | `/items/{id}` | - | Get item |
 | GET | `/items/stats/summary` | - | Summary statistics |
+| POST | `/items` | JWT | Create item |
+| PATCH | `/items/{id}` | JWT | Update item |
+| DELETE | `/items/{id}` | JWT | Delete item |
 
-The starter scaffold does not yet include persistence, JWT auth, or write endpoints. The layout is prepared for those next steps.
+Implemented item filters:
+
+- `min_price`
+- `max_price`
+- `category_id`
+- `name_contains`
+
+Rate limiting (FastAPI parity):
+
+- Auth endpoints: 10 requests per minute per client
+- Write endpoints: 60 requests per minute per client
 
 ## Environment variables
 
@@ -93,10 +121,9 @@ The starter scaffold does not yet include persistence, JWT auth, or write endpoi
 
 ## Suggested next steps
 
-1. Add controllers or route groups for full auth/category/item CRUD.
-2. Introduce EF Core with SQLite for local persistence.
-3. Add JWT authentication for write endpoints.
-4. Expand test coverage to match the other API repos.
+1. Replace the in-memory store with EF Core + SQLite/PostgreSQL persistence.
+2. Expand the test suite further toward full FastAPI count parity.
+3. Add migrations and production persistence wiring.
 
 ## *-101 Family
 

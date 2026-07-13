@@ -6,3 +6,6 @@ build:
 
 test:
 	dotnet test
+
+docker-test:
+	docker compose run --rm test

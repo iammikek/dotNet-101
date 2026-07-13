@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS sdk
 WORKDIR /src
 
 COPY Directory.Build.props ./
@@ -14,12 +14,18 @@ RUN dotnet restore
 COPY src ./src
 COPY tests ./tests
 
+FROM sdk AS test
+WORKDIR /src
+CMD ["dotnet", "test", "dotNet-101.sln", "--configuration", "Release", "--no-restore"]
+
+FROM sdk AS publish
+WORKDIR /src
 RUN dotnet publish src/dotNet101.Api/dotNet101.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-COPY --from=build /app/publish ./
+COPY --from=publish /app/publish ./
 
 EXPOSE 8010
 

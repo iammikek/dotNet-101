@@ -8,3 +8,12 @@ services:
       ASPNETCORE_URLS: http://0.0.0.0:8010
       JWT_SECRET: docker-dev-secret
       JWT_EXPIRE_MINUTES: 60
+
+  test:
+    build:
+      context: .
+      target: test
+    environment:
+      ASPNETCORE_ENVIRONMENT: Testing
+      JWT_SECRET: docker-test-secret
+      JWT_EXPIRE_MINUTES: 60
